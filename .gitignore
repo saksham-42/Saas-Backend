@@ -1,3 +1,4 @@
 env/
-__psycache__/
+__pycache__/
 .env
+.vscode/
