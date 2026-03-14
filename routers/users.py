@@ -21,15 +21,24 @@ users = {
 }
 
 @router.get("/")
-def get_all_users():
-    return users
+def get_all_users(skip: int = 0, limit: int = 10):
+    user_list = list(users.values())
+    return user_list[skip : skip + limit]
 
 @router.get("/get-user/{user_id}")
 def get_user(user_id : int):
     if user_id not in users:
         raise HTTPException(status_code = 404, detail="User doesn't exist")
     return users[user_id]
- 
+
+@router.get("/search")
+def search_users(name : str):
+    results = {uid : u for uid, u in users.items()
+               if name.lower() in u["name"].lower()}
+    if not results:
+        raise HTTPException(status_code=404, detail= " No users found")
+    return results
+
 @router.post("/add-users/{user_id}")
 def add_user(user_id : int, user : User_create):
     if user_id in users:
@@ -47,7 +56,6 @@ def update_users(user_id : int, user : Update_user):
         users[user_id].age = user.age
     if user.email is not None:
         users[user_id].email = user.email
-        users[user_id]["email"] = user.email
 
     return users[user_id]
 
