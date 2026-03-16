@@ -56,7 +56,6 @@ def update_users(user_id : int, user : Update_user):
         users[user_id].age = user.age
     if user.email is not None:
         users[user_id].email = user.email
-
     return users[user_id]
 
 @router.delete("/delete-user/{user_id}")
