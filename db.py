@@ -1,10 +1,14 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
+from dotenv import load_dotenv
+import os
 
-db_url = "postgresql://postgres:sam.2404@localhost:5432/saas_db"
+load_dotenv()
 
-engine = create_engine(db_url)
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+engine = create_engine(DATABASE_URL)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind = engine)
 
@@ -17,3 +21,8 @@ def get_db():
     finally: 
         db.close()
 
+try:
+    with engine.connect() as connection:
+        print("Database connected successfully")
+except Exception as e:
+    print(f"Data base connection failed:{e}")
