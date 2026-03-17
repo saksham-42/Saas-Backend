@@ -7,8 +7,8 @@ class User_create(BaseModel):
     email : EmailStr
 
 class Update_user(BaseModel):
-    name : Optional[str] = Field(min_length=2, max_length=20)
-    age : Optional[int] = Field(gt=18, lt=75)
+    name : Optional[str] = None
+    age : Optional[int] = None
     email : Optional[EmailStr] = None
 
 class User_response(BaseModel):
