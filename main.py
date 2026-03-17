@@ -9,7 +9,6 @@ import models
 app = FastAPI()
 
 models.Base.metadata.create_all(bind=engine)
-app.include_router(users.router)
 
 app.add_middleware(
         CORSMiddleware,
@@ -17,6 +16,8 @@ app.add_middleware(
         allow_headers = ["*"],
         allow_methods = ["*"]
 )
+
+app.include_router(users.router)
 
 @app.exception_handler(404)
 def not_found_error(request:Request, exc):
