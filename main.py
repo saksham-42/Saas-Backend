@@ -3,12 +3,8 @@ from routers import users
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-from db import engine
-import models 
-
+from models import user
 app = FastAPI()
-
-models.Base.metadata.create_all(bind=engine)
 
 app.add_middleware(
         CORSMiddleware,
