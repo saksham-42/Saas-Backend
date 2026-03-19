@@ -10,8 +10,8 @@ router = APIRouter(
 )
 
 @router.get("/",response_model=list[User_response])
-def get_all_users(db:Session = Depends(get_database), skip: int = 0, limit: int = 10):
-    return crud.get_users(db, skip=skip, limit = limit)
+def get_all_users(db:Session = Depends(get_database), skip: int = 0, limit: int = 10,search: str = ""):
+    return crud.get_users(db, skip = skip, limit = limit, search = search)
 
 @router.get("/{user_id}", response_model=User_response)
 def get_user(user_id : int, db:Session = Depends(get_database)):
@@ -29,8 +29,8 @@ def add_user(user : User_create, db:Session = Depends(get_database)):
     
 @router.put("/{user_id}", response_model=User_response)
 def update_user(user_id : int, user : Update_user, db : Session = Depends(get_database)):
-    update_user = crud.get_user(db,user_id)
-    if not update_user:
+    db_user = crud.get_user(db,user_id)
+    if not db_user:
         raise HTTPException(status_code= 404, detail="User doesn't exist")
     return crud.update_user(db, user_id, user)
 
