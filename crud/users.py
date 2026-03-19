@@ -1,9 +1,9 @@
 from sqlalchemy.orm import Session
 from models.user import User
-from schemas import User_response, User_create, Update_user
+from schemas import User_create, Update_user
 
-def get_users(db:Session, skip : int = 0, limit : int = 10):
-    return db.query(User).offset(skip).limit(limit).all()
+def get_users(db:Session, skip : int = 0, limit : int = 10,search:str=""):
+    return db.query(User).filter(User.name.ilike(f"%{search}%")).offset(skip).limit(limit).all()
 
 def get_user(db:Session,user_id:int):
     return db.query(User).filter(User.id == user_id).first()
