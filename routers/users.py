@@ -10,7 +10,7 @@ router = APIRouter(
 )
 
 @router.get("/",response_model=list[User_response])
-def get_all_users(db:Session = Depends(get_database), skip: int = 0, limit: int = 10,search: str = ""):
+def get_all_users(db:Session = Depends(get_database), skip: int = 0, limit: int = 10, search: str = ""):
     return crud.get_users(db, skip = skip, limit = limit, search = search)
 
 @router.get("/{user_id}", response_model=User_response)
