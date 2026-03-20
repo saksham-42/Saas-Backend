@@ -1,4 +1,5 @@
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy.orm import relationship
 from db import Base
 
 class User(Base):
@@ -8,3 +9,6 @@ class User(Base):
     name = Column(String, nullable=False)
     email = Column(String, unique=True, nullable=False, index=True)
     age = Column(Integer, nullable=False)
+    org_id = Column(Integer, ForeignKey("organizations.id"), nullable= True)
+
+    organization = relationship("Organization", back_populates="users")
