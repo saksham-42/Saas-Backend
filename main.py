@@ -5,6 +5,7 @@ from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from models import user
 app = FastAPI()
+from models.organization import Organization
 
 app.add_middleware(
         CORSMiddleware,
