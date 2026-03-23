@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from models.user import User
 from schemas import User_create, Update_user
+from auth.hashing import hash_password
 
 def get_users(db:Session, skip : int = 0, limit : int = 10,search:str=""):
     return db.query(User).filter(User.name.ilike(f"%{search}%")).offset(skip).limit(limit).all()
@@ -12,7 +13,9 @@ def get_user_by_email(db:Session, email:str):
     return db.query(User).filter(User.email == email).first()
 
 def create_user(db:Session, user : User_create):
-    new_user = User(**user.model_dump())
+    hashed = hash_password(user.password)
+    user_data = user.model_dump(exclude={"password"})
+    new_user = User(**user_data, hashed_password=hashed)
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
