@@ -20,3 +20,8 @@ class User_response(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class Login(BaseModel):
+    email: EmailStr
+    password: str
