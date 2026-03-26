@@ -3,11 +3,17 @@ from schemas import User_response, User_create, Update_user
 from db import get_database
 from sqlalchemy.orm import Session
 import crud.users as crud
+from auth.dependencies import get_user
+from models.user import User
 
 router = APIRouter(
     prefix = "/users",
     tags = ["users"]
 )
+
+@router.get("/me", response_model=User_response)
+def get_me(current_user : User = Depends(get_user)):
+    return current_user
 
 @router.get("/",response_model=list[User_response])
 def get_all_users(db:Session = Depends(get_database), skip: int = 0, limit: int = 10, search: str = ""):
