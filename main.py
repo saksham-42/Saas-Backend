@@ -4,6 +4,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from models import user
+from models.organization import Organization
 app = FastAPI()
 
 app.add_middleware(
