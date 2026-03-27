@@ -6,7 +6,7 @@ from fastapi import HTTPException, Depends
 from fastapi.security import OAuth2PasswordBearer
 import os
 from dotenv import load_dotenv
-
+from models.user import User
 SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = os.getenv("ALGORITHM")
 
@@ -26,6 +26,11 @@ def get_user(token : str = Depends(oauth_scheme), db: Session = Depends(get_data
     if curr_user is None:
         raise credentials_exception
     return curr_user
+
+def require_admin(current_user: User=Depends(get_user)):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admins Only")
+    return current_user
 
 
 
