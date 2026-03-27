@@ -5,7 +5,9 @@ class User_create(BaseModel):
     name : str = Field(min_length=2, max_length=20)
     age : int = Field(gt=18, lt=75)
     email : EmailStr
+    org_id : int
     password : str = Field(min_length=6)
+    role : str = Field(min_length=5)
 
 class Update_user(BaseModel):
     name : Optional[str] = Field(default=None, min_length=2, max_length=50)
