@@ -3,7 +3,7 @@ from schemas import User_response, User_create, Update_user
 from db import get_database
 from sqlalchemy.orm import Session
 import crud.users as crud
-from auth.dependencies import get_user
+from auth.dependencies import get_user,require_admin
 from models.user import User
 
 router = APIRouter(
@@ -20,7 +20,7 @@ def get_all_users(db:Session = Depends(get_database), skip: int = 0, limit: int 
     return crud.get_users(db, skip = skip, limit = limit, search = search)
 
 @router.get("/{user_id}", response_model=User_response)
-def get_user(user_id : int, db:Session = Depends(get_database)):
+def get_user_by_id(user_id : int, db:Session = Depends(get_database)):
     user = crud.get_user(db,user_id)
     if not user:
         raise HTTPException(status_code = 404, detail="User doesn't exist")
@@ -41,7 +41,7 @@ def update_user(user_id : int, user : Update_user, db : Session = Depends(get_da
     return crud.update_user(db, user_id, user)
 
 @router.delete("/{user_id}")
-def delete_user(user_id : int,db: Session = Depends(get_database)):
+def delete_user(user_id : int,db: Session = Depends(get_database), curr_user : User = Depends(require_admin)):
     db_user = crud.get_user(db, user_id)
     if not db_user:
         raise HTTPException(status_code= 404, detail="The user doesn't exist")
