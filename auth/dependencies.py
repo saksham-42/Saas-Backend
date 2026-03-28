@@ -19,7 +19,9 @@ def get_user(token : str = Depends(oauth_scheme), db: Session = Depends(get_data
         email: str = payload.get("sub")
         if email is None:
             raise credentials_exception
-    except JWTError:
+    except JWTError as e:
+        if "expired" in str(e):
+            raise HTTPException(status_code=401, detail="Token has been expired")
         raise credentials_exception
     
     curr_user = get_user_by_email(db,email)
@@ -31,7 +33,3 @@ def require_admin(current_user: User=Depends(get_user)):
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Admins Only")
     return current_user
-
-
-
-        
