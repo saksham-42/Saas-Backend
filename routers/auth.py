@@ -1,10 +1,12 @@
 from fastapi import HTTPException,APIRouter,Depends
 from auth.hashing import hash_password, verify_password
-from auth.tokens import create_access_token
+from auth.tokens import create_access_token, create_refresh_token
 from sqlalchemy.orm import Session
 from db import get_database
 from schemas import User_create,User_response,Login
 from crud.users import get_user, get_user_by_email, create_user
+from datetime import datetime, timedelta
+from crud.refresh_tokens import get_refresh_token, revoke_refresh_token, save_refresh_token
 
 router = APIRouter(
     prefix = "/auth",
@@ -26,4 +28,19 @@ def login(user:Login,db: Session = Depends(get_database)):
     if not verify_password(user.password,db_user.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid credentials")
     access_token = create_access_token(data={"sub": db_user.email})
-    return {"access_token":access_token,"token_type": "bearer"}
+    refresh_token = create_refresh_token()
+    save_refresh_token(db, refresh_token, db_user.id)
+    return {"access_token":access_token,"refresh_token":refresh_token ,"token_type": "bearer"}
+
+@router.post("/refresh")
+def refresh(refresh_token:str, db: Session = Depends(get_database)):
+    db_token = get_refresh_token(db, refresh_token)
+    if not db_token or db_token.revoked:
+        raise HTTPException(status_code=401 ,detail="Invalid or expired refresh token")
+    access_token = create_access_token(data={"sub":db_token.user.email})
+    return {"access_token": access_token, "token_type":"bearer"} 
+
+@router.post("/logout")
+def logout(refresh_token: str, db: Session = Depends(get_database)):
+    revoke_refresh_token(db, refresh_token)
+    return {"message": "Logged out successfully"}
