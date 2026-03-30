@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Request
-from routers import users,auth
+from routers import users,auth,organizations
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -17,6 +17,7 @@ app.add_middleware(
 
 app.include_router(users.router)
 app.include_router(auth.router)
+app.include_router(organizations.router)
 
 @app.exception_handler(404)
 def not_found_error(request:Request, exc):
