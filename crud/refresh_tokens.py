@@ -1,9 +1,9 @@
 from sqlalchemy.orm import Session
 from models.refresh_token import RefreshToken
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta,timezone
 
 def save_refresh_token(db: Session, token: str, user_id: int):
-    expires_at = datetime.utcnow()+timedelta(days=7)
+    expires_at = datetime.now(timezone.now)+timedelta(days=7)
     db_token = RefreshToken(token=token, user_id=user_id, expires_at= expires_at)
     db.add(db_token)
     db.commit()

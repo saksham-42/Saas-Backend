@@ -1,5 +1,5 @@
 from jose import JWTError, jwt
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from dotenv import load_dotenv
 import os
 import secrets
@@ -12,7 +12,7 @@ EXPIRE_MINUTES = int(os.getenv("EXPIRE_MINUTES"))
 
 def create_access_token(data:dict):
     to_encode = data.copy()
-    expire = datetime.utcnow()+timedelta(minutes=EXPIRE_MINUTES)
+    expire = datetime.now(timezone.utc)+timedelta(minutes=EXPIRE_MINUTES)
     to_encode.update({"exp":expire})
     return jwt.encode(to_encode,SECRET_KEY,algorithm=ALGORITHM)
 
