@@ -1,7 +1,7 @@
 from sqlalchemy import Column, String, Integer, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from db import Base
-from datetime import datetime
+from datetime import datetime, timezone
 
 class Organization(Base):
     __tablename__ = "organizations"
@@ -10,7 +10,7 @@ class Organization(Base):
     name = Column(String, unique= True, nullable=False)
     slug = Column(String, unique= True, nullable=False, index=True)
     owner_id = Column(Integer, ForeignKey("users.id"),nullable=False)
-    created_at = Column(DateTime, nullable= False, default=datetime.utcnow)
+    created_at = Column(DateTime(timezone=True), nullable= False, default= lambda:datetime.now(timezone.utc))
 
-    users = relationship("User", back_populates="organization")
+    users = relationship("User", back_populates="organization",foreign_keys="User.org_id")
 
