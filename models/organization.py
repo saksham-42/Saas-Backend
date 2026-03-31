@@ -13,4 +13,5 @@ class Organization(Base):
     created_at = Column(DateTime(timezone=True), nullable= False, default= lambda:datetime.now(timezone.utc))
 
     users = relationship("User", back_populates="organization",foreign_keys="User.org_id")
+    members = relationship("OrganizationMember", back_populates="organization", foreign_keys="OrganizationMember.org_id")
 

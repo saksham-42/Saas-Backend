@@ -14,4 +14,5 @@ class User(Base):
     org_id = Column(Integer, ForeignKey("organizations.id"), nullable= True)
 
     organization = relationship("Organization", back_populates="users", foreign_keys=[org_id])
+    organization_members = relationship("OrganizationMembers", back_populates="user", foreign_keys="OrganizationMember.user_id")
     refresh_tokens = relationship("RefreshToken", back_populates="user")
