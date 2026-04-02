@@ -12,4 +12,4 @@ class OrganizationMember(Base):
 
     user = relationship("User", back_populates="organization_members",foreign_keys=[user_id])
     organization = relationship("Organization", back_populates="members",foreign_keys=[org_id])
-
+    

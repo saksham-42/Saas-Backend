@@ -14,4 +14,5 @@ class Organization(Base):
 
     users = relationship("User", back_populates="organization",foreign_keys="User.org_id")
     members = relationship("OrganizationMember", back_populates="organization", foreign_keys="OrganizationMember.org_id")
+    tasks = relationship("Task", back_populates="organization", foreign_keys="Task.org_id")
 

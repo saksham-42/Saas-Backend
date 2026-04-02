@@ -16,3 +16,4 @@ class User(Base):
     organization = relationship("Organization", back_populates="users", foreign_keys=[org_id])
     organization_members = relationship("OrganizationMember", back_populates="user", foreign_keys="OrganizationMember.user_id")
     refresh_tokens = relationship("RefreshToken", back_populates="user")
+    tasks = relationship("Task", back_populates="assignee", foreign_keys="Task.assigned_to")
