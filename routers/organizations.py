@@ -1,11 +1,12 @@
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 from db import get_database
-from schemas import Org_create,Org_response
+from schemas import Org_create,Org_response,Task_create, Task_response
 from auth.dependencies import get_user
 from models.user import User
 from models.organization import Organization
 from models.organization_member import OrganizationMember
+from models.task import Task
 
 router = APIRouter(
     prefix= "/organization",
@@ -60,3 +61,22 @@ def get_org(curr_org_id:int, db:Session=Depends(get_database),curr_user:User=Dep
         raise HTTPException(status_code=403, detail="Not a member of this organization")    
     members = db.query(OrganizationMember).filter(OrganizationMember.org_id==curr_org_id).all()
     return members
+
+@router.post("/{org_id}/tasks", response_model=Task_response)
+def create_tasks(org_id:int,task: Task_create ,curr_user: User = Depends(get_user), db:Session= Depends(get_database)):
+    member = db.query(OrganizationMember).filter(OrganizationMember.org_id==org_id, OrganizationMember.user_id==curr_user.id).first()
+    if not member:
+        raise HTTPException(status_code=403, detail="Not a member of this organization")
+    new_task = Task(**task.model_dump(), org_id = org_id)
+    db.add(new_task)
+    db.commit()
+    db.refresh(new_task)
+    return new_task
+
+@router.get("/{org_id}/tasks", response_model=list[Task_response])
+def get_tasks(org_id: int, curr_user: User = Depends(get_user), db: Session = Depends(get_database)):
+    member = db.query(OrganizationMember).filter(OrganizationMember.org_id == org_id, OrganizationMember.user_id==curr_user.id).first()
+    if not member:
+        raise HTTPException(status_code=403, detail="Not a member of this organization")
+    return db.query(Task).filter(Task.org_id==org_id, Task.is_deleted==False).all()
+

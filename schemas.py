@@ -1,5 +1,6 @@
 from pydantic import BaseModel, EmailStr, Field
 from typing import Optional
+from datetime import datetime
 
 class User_create(BaseModel):
     name : str = Field(min_length=2, max_length=20)
@@ -45,3 +46,24 @@ class Org_response(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class Task_create(BaseModel):
+    title : str = Field(min_length=2, max_length=50)
+    description : Optional[str] = None
+    status : str = Field(default="pending")
+    assigned_to : Optional[int] = None 
+
+class Task_response(BaseModel):
+    id : int
+    description : Optional[str]
+    title : str
+    status : str
+    created_at : datetime
+    is_deleted : bool
+    org_id : int
+    assigned_to : Optional[int]
+
+    class Config:
+        from_attributes = True
+        

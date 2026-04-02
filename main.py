@@ -7,6 +7,7 @@ from models import user
 from models.organization import Organization
 from models.refresh_token import RefreshToken
 from models.organization_member import OrganizationMember
+from models.task import Task
 app = FastAPI()
 
 app.add_middleware(
