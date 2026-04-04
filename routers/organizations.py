@@ -1,12 +1,14 @@
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 from db import get_database
-from schemas import Org_create,Org_response,Task_create, Task_response
+from schemas import Org_create,Org_response,Task_create, Task_response, TaskStatus, TaskUpdate, TaskAssign
 from auth.dependencies import get_user, get_org_member
 from models.user import User
 from models.organization import Organization
 from models.organization_member import OrganizationMember
 from models.task import Task
+from datetime import datetime, timezone
+from typing import Optional
 
 router = APIRouter(
     prefix= "/organization",
@@ -59,6 +61,41 @@ def create_tasks(org_id:int,task: Task_create ,curr_user: User = Depends(get_org
     return new_task
 
 @router.get("/{org_id}/tasks", response_model=list[Task_response])
-def get_tasks(org_id: int, curr_user: User = Depends(get_org_member), db: Session = Depends(get_database)):
-    return db.query(Task).filter(Task.org_id==org_id, Task.is_deleted==False).all()
+def get_tasks(org_id: int,status: Optional[TaskStatus] = None,curr_user: User = Depends(get_org_member), db: Session = Depends(get_database)):
+    task = db.query(Task).filter(Task.org_id==org_id, Task.is_deleted==False)
+    if status:
+        task = task.filter(Task.status==status)
+    return task.all()
 
+@router.put("/{org_id}/tasks/{task_id}", response_model=Task_response)
+def update_task(org_id: int, task_id: int, task_update: TaskUpdate, member: OrganizationMember = Depends(get_org_member), db: Session = Depends(get_database)):
+    task = db.query(Task).filter(Task.id == task_id, Task.org_id == org_id, Task.is_deleted == False).first()
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    task.status = task_update.status
+    db.commit()
+    db.refresh(task)
+    return task
+
+@router.patch("/{org_id}/tasks/{task_id}/assign", response_model=Task_response)
+def assign_task(org_id:int, task_id: int, task_assign: TaskAssign, member: OrganizationMember = Depends(get_org_member), db : Session = Depends(get_database)):
+    assignee = db.query(OrganizationMember).filter(OrganizationMember.org_id == org_id, OrganizationMember.user_id == task_assign.assigned_to).first()
+    if not assignee:
+        raise HTTPException(status_code=404, detail="Assignee not found in organization")
+    task = db.query(Task).filter(Task.id == task_id, Task.org_id==org_id, Task.is_deleted==False).first()
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    task.assigned_to = task_assign.assigned_to
+    db.commit()
+    db.refresh(task)
+    return task;
+
+@router.delete("/{org_id}/tasks/{task_id}", status_code=204)
+def delete_task(org_id: int, task_id: int, member: OrganizationMember = Depends(get_org_member), db: Session = Depends(get_database)):
+    task = db.query(Task).filter(Task.id==task_id, Task.org_id==org_id, Task.is_deleted==False).first()
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    task.is_deleted =True
+    task.deleted_at = datetime.now(timezone.utc)
+    db.commit()
+    
