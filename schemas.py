@@ -1,6 +1,7 @@
 from pydantic import BaseModel, EmailStr, Field
 from typing import Optional
 from datetime import datetime
+from enum import Enum
 
 class User_create(BaseModel):
     name : str = Field(min_length=2, max_length=20)
@@ -67,3 +68,15 @@ class Task_response(BaseModel):
     class Config:
         from_attributes = True
         
+
+class TaskStatus(str, Enum):
+    pending = "pending"
+    in_progress = "in_progress"
+    completed = "Completed"
+
+class TaskUpdate(BaseModel):
+    status : TaskStatus
+
+class TaskAssign(BaseModel):
+    assigned_to : int
+
