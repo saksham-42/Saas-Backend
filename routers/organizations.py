@@ -38,6 +38,8 @@ def add_members(org_id : int, user_id: int,db: Session= Depends(get_database), m
     org = db.query(Organization).filter(Organization.id==org_id).first()
     if member.role !="admin":
         raise HTTPException(status_code=403, detail="Only admins can add members")
+    if org.owner_id == user_id:
+        raise HTTPException(status_code=400, detail="Owner is already an admin of this organization")
     existing = db.query(OrganizationMember).filter(OrganizationMember.user_id==user_id, OrganizationMember.org_id == org_id).first()
     if existing:
         raise HTTPException(status_code=400, detail="Member already exists")
@@ -48,9 +50,23 @@ def add_members(org_id : int, user_id: int,db: Session= Depends(get_database), m
     return member
 
 @router.get("/{curr_org_id}/members")
-def get_org(curr_org_id:int, db:Session=Depends(get_database),member:OrganizationMember = Depends(get_org_member)):   
-    members = db.query(OrganizationMember).filter(OrganizationMember.org_id==curr_org_id).all()
+def get_org(curr_org_id:int, db:Session=Depends(get_database),skip: int= 0, limit: int= 10,member:OrganizationMember = Depends(get_org_member)):   
+    members = db.query(OrganizationMember).filter(OrganizationMember.org_id==curr_org_id).offset(skip).limit(limit).all()
     return members
+
+@router.delete("/{org_id}/members/{user_id}", status_code=200)
+def remove_member(org_id: int, user_id: int, member: OrganizationMember = Depends(get_org_member), db: Session = Depends(get_database)):
+    if member.role != "admin":
+        raise HTTPException(status_code=403, detail="Only admins can remove members")
+    org = db.query(Organization).filter(Organization.id == org_id).first()
+    if org.owner_id == user_id:
+        raise HTTPException(status_code=400, detail="Cannot remove the org owner")
+    memb = db.query(OrganizationMember).filter(OrganizationMember.org_id == org_id,OrganizationMember.user_id == user_id).first()
+    if not memb:
+        raise HTTPException(status_code=404, detail="Member not found")
+    db.delete(memb)
+    db.commit()
+    return {"message": "Member removed successfully!"}
 
 @router.post("/{org_id}/tasks", response_model=Task_response)
 def create_tasks(org_id:int,task: Task_create ,curr_user: User = Depends(get_org_member), db:Session= Depends(get_database)):
@@ -61,11 +77,11 @@ def create_tasks(org_id:int,task: Task_create ,curr_user: User = Depends(get_org
     return new_task
 
 @router.get("/{org_id}/tasks", response_model=list[Task_response])
-def get_tasks(org_id: int,status: Optional[TaskStatus] = None,curr_user: User = Depends(get_org_member), db: Session = Depends(get_database)):
+def get_tasks(org_id: int,status: Optional[TaskStatus] = None, skip: int= 0, limit: int= 10, curr_user: User = Depends(get_org_member), db: Session = Depends(get_database)):
     task = db.query(Task).filter(Task.org_id==org_id, Task.is_deleted==False)
     if status:
         task = task.filter(Task.status==status)
-    return task.all()
+    return task.offset(skip).limit(limit).all()
 
 @router.put("/{org_id}/tasks/{task_id}", response_model=Task_response)
 def update_task(org_id: int, task_id: int, task_update: TaskUpdate, member: OrganizationMember = Depends(get_org_member), db: Session = Depends(get_database)):
@@ -90,7 +106,7 @@ def assign_task(org_id:int, task_id: int, task_assign: TaskAssign, member: Organ
     db.refresh(task)
     return task;
 
-@router.delete("/{org_id}/tasks/{task_id}", status_code=204)
+@router.delete("/{org_id}/tasks/{task_id}", status_code=200)
 def delete_task(org_id: int, task_id: int, member: OrganizationMember = Depends(get_org_member), db: Session = Depends(get_database)):
     task = db.query(Task).filter(Task.id==task_id, Task.org_id==org_id, Task.is_deleted==False).first()
     if not task:
@@ -98,4 +114,4 @@ def delete_task(org_id: int, task_id: int, member: OrganizationMember = Depends(
     task.is_deleted =True
     task.deleted_at = datetime.now(timezone.utc)
     db.commit()
-    
+    return {"message": "Task deleted!"}
