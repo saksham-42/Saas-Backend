@@ -15,6 +15,8 @@ class Task(Base):
     created_at = Column(DateTime(timezone=True), nullable=False, default=lambda:datetime.now(timezone.utc))
     is_deleted = Column(Boolean, default=False, nullable=False)
     deleted_at = Column(DateTime(timezone=True), nullable=True)
+    priority = Column(String, nullable= False, default="medium")
+    due_date = Column(DateTime(timezone=True), nullable=True)
 
     organization = relationship("Organization",back_populates="tasks" ,foreign_keys=[org_id])
     assignee = relationship("User",back_populates="tasks" ,foreign_keys=[assigned_to])
