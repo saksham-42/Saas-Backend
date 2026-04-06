@@ -25,6 +25,7 @@ A production-grade multi-tenant SaaS Backend built with FastAPI, PostgreSQL, SQL
 - uvicorn
 
 ## Project Structure
+``` bash
 SaaS-Backend/
 ├── main.py
 ├── db.py
@@ -54,7 +55,7 @@ SaaS-Backend/
 │   └── users.py
 └── alembic/
     └── versions/
-
+```
 ## Setup
 ```bash
 git clone https://github.com/saksham-42/Saas-Backend.git
