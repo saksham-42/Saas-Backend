@@ -24,6 +24,9 @@ def create_organization(org: Org_create, db: Session = Depends(get_database), cu
     db.add(org)
     db.commit()
     db.refresh(org)
+    member = OrganizationMember(org_id = org.id, user_id = current_user.id, role="admin")
+    db.add(member)
+    db.commit()
     return org
 
 @router.get("/{org_id}", response_model=Org_response)
@@ -49,9 +52,9 @@ def add_members(org_id : int, user_id: int,db: Session= Depends(get_database), m
     db.refresh(member)
     return member
 
-@router.get("/{curr_org_id}/members")
-def get_org(curr_org_id:int, db:Session=Depends(get_database),skip: int= 0, limit: int= 10,member:OrganizationMember = Depends(get_org_member)):   
-    members = db.query(OrganizationMember).filter(OrganizationMember.org_id==curr_org_id).offset(skip).limit(limit).all()
+@router.get("/{org_id}/members")
+def get_org(org_id: int, skip: int = 0, limit: int = 10, db: Session = Depends(get_database), member: OrganizationMember = Depends(get_org_member)):
+    members = db.query(OrganizationMember).filter(OrganizationMember.org_id == org_id).offset(skip).limit(limit).all()
     return members
 
 @router.delete("/{org_id}/members/{user_id}", status_code=200)
@@ -70,6 +73,10 @@ def remove_member(org_id: int, user_id: int, member: OrganizationMember = Depend
 
 @router.post("/{org_id}/tasks", response_model=Task_response)
 def create_tasks(org_id:int,task: Task_create ,curr_user: User = Depends(get_org_member), db:Session= Depends(get_database)):
+    if task.assigned_to:
+        assignee = db.query(OrganizationMember).filter(OrganizationMember.id == org_id, OrganizationMember.user_id==task.assigned_to).first()
+        if not assignee:
+            raise HTTPException(status_code=400, detail="Assigned user isn't a part of organization")
     new_task = Task(**task.model_dump(), org_id = org_id)
     db.add(new_task)
     db.commit()
