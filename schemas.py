@@ -5,19 +5,15 @@ from enum import Enum
 
 class User_create(BaseModel):
     name : str = Field(min_length=2, max_length=20)
-    age : int = Field(gt=18, lt=75)
+    age : int = Field(gt=15, lt=75)
     email : EmailStr
-    org_id : Optional[int] = None
-    password : str = Field(min_length=6)
-    role : str = Field(min_length=5)    
+    password : str = Field(min_length=6) 
 
 class Update_user(BaseModel):
     name : Optional[str] = Field(default=None, min_length=2, max_length=50)
     age : Optional[int] = Field(default=None, gt=15, lt=75)
     email : Optional[EmailStr] = None
-    org_id : Optional[int] = None
     password : Optional[str] = Field(default=None, min_length=6)
-    role : Optional[str] = Field(default=None, min_length=5)
 
 class User_response(BaseModel):
     id : int
