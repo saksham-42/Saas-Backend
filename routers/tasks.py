@@ -15,9 +15,9 @@ router = APIRouter(
 )
 
 @router.post("/{org_id}/tasks", response_model=Task_response)
-def create_tasks(org_id:int, task: Task_create ,curr_user: User = Depends(get_org_member), db:Session= Depends(get_database)):
+def create_tasks(org_id:int, task: Task_create ,member: OrganizationMember = Depends(get_org_member), db:Session= Depends(get_database)):
     if task.assigned_to:
-        assignee = db.query(OrganizationMember).filter(OrganizationMember.id == org_id, OrganizationMember.user_id==task.assigned_to).first()
+        assignee = db.query(OrganizationMember).filter(OrganizationMember.org_id == org_id, OrganizationMember.user_id==task.assigned_to).first()
         if not assignee:
             raise HTTPException(status_code=400, detail="Assigned user isn't a part of organization")
     new_task = Task(**task.model_dump(), org_id = org_id)

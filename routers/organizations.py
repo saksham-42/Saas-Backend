@@ -5,6 +5,7 @@ from schemas import Org_create,Org_response
 from auth.dependencies import get_user, get_org_member
 from models.organization import Organization
 from models.organization_member import OrganizationMember
+from models.user import User
 
 router = APIRouter(
     prefix= "/organization",
@@ -12,7 +13,7 @@ router = APIRouter(
 )
 
 @router.post("/", response_model=Org_response)
-def create_organization(org: Org_create, db: Session = Depends(get_database), current_user : OrganizationMember=Depends(get_user)):
+def create_organization(org: Org_create, db: Session = Depends(get_database), current_user : User = Depends(get_user)):
     existing = db.query(Organization).filter(Organization.slug == org.slug).first()
     if existing:
         raise HTTPException(status_code=400, detail="Organization already exists")
@@ -42,11 +43,11 @@ def add_members(org_id : int, user_id: int,db: Session= Depends(get_database), m
     existing = db.query(OrganizationMember).filter(OrganizationMember.user_id==user_id, OrganizationMember.org_id == org_id).first()
     if existing:
         raise HTTPException(status_code=400, detail="Member already exists")
-    member = OrganizationMember(org_id=org_id, user_id=user_id, role = "member")
-    db.add(member)
+    memb = OrganizationMember(org_id=org_id, user_id=user_id, role = "member")
+    db.add(memb)
     db.commit()
-    db.refresh(member)
-    return member
+    db.refresh(memb)
+    return memb
 
 @router.get("/{org_id}/members")
 def get_org(org_id: int, skip: int = 0, limit: int = 10, db: Session = Depends(get_database), member: OrganizationMember = Depends(get_org_member)):
