@@ -24,9 +24,12 @@ if config.config_file_name is not None:
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
-from models.user import User
-from models.organization import Organization
-from db import Base
+from app.core.db import Base
+from app.models.user import User
+from app.models.organization import Organization
+from app.models.organization_member import OrganizationMember
+from app.models.refresh_token import RefreshToken
+from app.models.task import Task
 
 target_metadata = Base.metadata
 

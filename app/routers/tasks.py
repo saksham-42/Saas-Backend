@@ -1,11 +1,11 @@
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
-from models.task import Task
-from schemas import Task_create,Task_response,TaskAssign,TaskStatus,TaskUpdate
-from auth.dependencies import get_user, get_org_member
-from models.user import User
-from models.organization_member import OrganizationMember
-from db import get_database
+from app.models.task import Task
+from app.schemas.task import Task_create,Task_response,TaskAssign,TaskStatus,TaskUpdate
+from app.auth.dependencies import get_org_member
+from app.models.user import User
+from app.models.organization_member import OrganizationMember
+from app.core.db import get_database
 from datetime import datetime, timezone
 from typing import Optional
 
@@ -54,7 +54,7 @@ def assign_task(org_id:int, task_id: int, task_assign: TaskAssign, member: Organ
     task.assigned_to = task_assign.assigned_to
     db.commit()
     db.refresh(task)
-    return task;
+    return task
 
 @router.delete("/{org_id}/tasks/{task_id}", status_code=200)
 def delete_task(org_id: int, task_id: int, member: OrganizationMember = Depends(get_org_member), db: Session = Depends(get_database)):

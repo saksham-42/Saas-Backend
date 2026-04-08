@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from models.refresh_token import RefreshToken
+from app.models.refresh_token import RefreshToken
 from datetime import datetime, timedelta,timezone
 
 def save_refresh_token(db: Session, token: str, user_id: int):

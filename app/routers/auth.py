@@ -1,12 +1,12 @@
 from fastapi import HTTPException,APIRouter,Depends
-from auth.hashing import hash_password, verify_password
-from auth.tokens import create_access_token, create_refresh_token
+from app.auth.hashing import hash_password, verify_password
+from app.auth.tokens import create_access_token, create_refresh_token
 from sqlalchemy.orm import Session
-from db import get_database
-from schemas import User_create,User_response,Login
-from crud.users import get_user, get_user_by_email, create_user
+from app.core.db import get_database
+from app.schemas.user import User_create,User_response,Login
+from app.crud.users import get_user, get_user_by_email, create_user
 from datetime import datetime, timedelta
-from crud.refresh_tokens import get_refresh_token, revoke_refresh_token, save_refresh_token
+from app.crud.refresh_tokens import get_refresh_token, revoke_refresh_token, save_refresh_token
 
 router = APIRouter(
     prefix = "/auth",

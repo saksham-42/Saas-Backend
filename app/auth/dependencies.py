@@ -1,13 +1,13 @@
 from sqlalchemy.orm import Session
-from db import get_database
-from crud.users import get_user_by_email
+from app.core.db import get_database
+from app.crud.users import get_user_by_email
 from jose import JWTError, jwt
 from fastapi import HTTPException, Depends
 from fastapi.security import OAuth2PasswordBearer
 import os
 from dotenv import load_dotenv
-from models.user import User
-from models.organization_member import OrganizationMember
+from app.models.user import User
+from app.models.organization_member import OrganizationMember
 SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = os.getenv("ALGORITHM")
 

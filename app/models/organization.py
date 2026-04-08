@@ -1,6 +1,6 @@
 from sqlalchemy import Column, String, Integer, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
-from db import Base
+from app.core.db import Base
 from datetime import datetime, timezone
 
 class Organization(Base):

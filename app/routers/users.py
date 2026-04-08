@@ -1,11 +1,12 @@
 from fastapi import Depends, HTTPException, APIRouter
-from schemas import User_response, User_create, Update_user, Task_response
-from db import get_database
 from sqlalchemy.orm import Session
-import crud.users as crud
-from auth.dependencies import get_user,require_admin
-from models.user import User
-from models.task import Task
+from app.schemas.user import User_response, User_create, Update_user
+from app.schemas.task import Task_response
+from app.core.db import get_database
+import app.crud.users as crud
+from app.auth.dependencies import get_user,require_admin
+from app.models.user import User
+from app.models.task import Task
 
 router = APIRouter(
     prefix = "/users",
@@ -15,6 +16,11 @@ router = APIRouter(
 @router.get("/me", response_model=User_response)
 def get_me(current_user : User = Depends(get_user)):
     return current_user
+
+@router.get("/me/tasks", response_model=list[Task_response])
+def get_my_tasks(skip: int =0, limit:int = 10, db:Session = Depends(get_database), curr_user: User = Depends(get_user)):
+    tasks = db.query(Task).filter(Task.assigned_to==curr_user.id, Task.is_deleted==False).offset(skip).limit(limit).all()
+    return tasks
 
 @router.get("/",response_model=list[User_response])
 def get_all_users(db:Session = Depends(get_database), skip: int = 0, limit: int = 10, search: str = ""):
@@ -26,11 +32,6 @@ def get_user_by_id(user_id : int, db:Session = Depends(get_database)):
     if not user:
         raise HTTPException(status_code = 404, detail="User doesn't exist")
     return user
-
-@router.get("/me/tasks", response_model=list[Task_response])
-def get_my_tasks(skip: int =0, limit:int = 10, db:Session = Depends(get_database), curr_user: User = Depends(get_user)):
-    tasks = db.query(Task).filter(Task.assigned_to==curr_user.id, Task.is_deleted==False).offset(skip).limit(limit).all()
-    return tasks
 
 @router.post("/", response_model= User_response)
 def add_user(user : User_create, db:Session = Depends(get_database)):
@@ -47,7 +48,7 @@ def update_user(user_id : int, user : Update_user, db : Session = Depends(get_da
     return crud.update_user(db, user_id, user)
 
 @router.delete("/{user_id}")
-def delete_user(user_id : int,db: Session = Depends(get_database), curr_user : User = Depends(require_admin)):
+def delete_user(user_id : int, db: Session = Depends(get_database), curr_user : User = Depends(require_admin)):
     db_user = crud.get_user(db, user_id)
     if not db_user:
         raise HTTPException(status_code= 404, detail="The user doesn't exist")

@@ -1,11 +1,11 @@
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
-from db import get_database
-from schemas import Org_create,Org_response
-from auth.dependencies import get_user, get_org_member
-from models.organization import Organization
-from models.organization_member import OrganizationMember
-from models.user import User
+from app.core.db import get_database
+from app.schemas.organization import Org_create,Org_response, Memb_role_update
+from app.auth.dependencies import get_user, get_org_member
+from app.models.organization import Organization
+from app.models.organization_member import OrganizationMember
+from app.models.user import User
 
 router = APIRouter(
     prefix= "/organization",
@@ -36,6 +36,8 @@ def get_organization(org_id: int, db: Session = Depends(get_database), member: O
 @router.post("/{org_id}/members")
 def add_members(org_id : int, user_id: int,db: Session= Depends(get_database), member: OrganizationMember = Depends(get_org_member)):
     org = db.query(Organization).filter(Organization.id==org_id).first()
+    if not org:
+        raise HTTPException(status_code=404, detail="Organization not found")
     if member.role !="admin":
         raise HTTPException(status_code=403, detail="Only admins can add members")
     if org.owner_id == user_id:
@@ -53,6 +55,23 @@ def add_members(org_id : int, user_id: int,db: Session= Depends(get_database), m
 def get_org(org_id: int, skip: int = 0, limit: int = 10, db: Session = Depends(get_database), member: OrganizationMember = Depends(get_org_member)):
     members = db.query(OrganizationMember).filter(OrganizationMember.org_id == org_id).offset(skip).limit(limit).all()
     return members
+
+@router.patch("/{org_id}/members/{user_id}/role")
+def update_member_info(org_id: int, user_id: int, role: Memb_role_update, db: Session = Depends(get_database), member: OrganizationMember = Depends(get_org_member)):
+    if member.role != "admin":
+        raise HTTPException(status_code=403, detail="Only admins allowed to update details")
+    org = db.query(Organization).filter(Organization.id==org_id).first()
+    if not org:
+        raise HTTPException(status_code=404, detail="Organization not found")
+    if org.owner_id == user_id:
+        raise HTTPException(status_code=400, detail="Can't update the owner's role")
+    memb = db.query(OrganizationMember).filter(OrganizationMember.org_id==org_id, OrganizationMember.user_id==user_id).first()
+    if not memb:
+        raise HTTPException(status_code=404, detail="Member not found")
+    memb.role = role.role
+    db.commit()
+    db.refresh(memb)
+    return memb
 
 @router.delete("/{org_id}/members/{user_id}", status_code=200)
 def remove_member(org_id: int, user_id: int, member: OrganizationMember = Depends(get_org_member), db: Session = Depends(get_database)):

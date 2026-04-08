@@ -1,13 +1,13 @@
 from fastapi import FastAPI, Request
-from routers import users,auth,organizations,tasks
+from app.routers import users,auth,organizations,tasks
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-from models import user
-from models.organization import Organization
-from models.refresh_token import RefreshToken
-from models.organization_member import OrganizationMember
-from models.task import Task
+from app.models import user
+from app.models.organization import Organization
+from app.models.refresh_token import RefreshToken
+from app.models.organization_member import OrganizationMember
+from app.models.task import Task
 app = FastAPI()
 
 app.add_middleware(
