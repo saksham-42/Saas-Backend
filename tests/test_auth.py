@@ -107,3 +107,35 @@ def test_protected_route_with_token(client):
         "Authorization": f"Bearer {token}"
     })
     assert response.status_code == 200
+
+
+def test_logout(client):
+    client.post("/auth/register", json={
+        "name": "Logout User", "age": 25,
+        "email": "logout@example.com", "password": "secret123"
+    })
+    login = client.post("/auth/login", json={
+        "email": "logout@example.com", "password": "secret123"
+    })
+    refresh_token = login.json()["refresh_token"]
+    response = client.post(f"/auth/logout?refresh_token={refresh_token}")
+    assert response.status_code == 200
+
+
+def test_refresh_token(client):
+    client.post("/auth/register", json={
+        "name": "Refresh User", "age": 25,
+        "email": "refresh@example.com", "password": "secret123"
+    })
+    login = client.post("/auth/login", json={
+        "email": "refresh@example.com", "password": "secret123"
+    })
+    refresh_token = login.json()["refresh_token"]
+    response = client.post(f"/auth/refresh?refresh_token={refresh_token}")
+    assert response.status_code == 200
+    assert "access_token" in response.json()
+
+
+def test_refresh_invalid_token(client):
+    response = client.post("/auth/refresh?refresh_token=invalidtoken123")
+    assert response.status_code == 401
