@@ -1,6 +1,7 @@
 import logging
 import sys
 
+
 def setup_logging():
     logger = logging.getLogger("app")
     logger.setLevel(logging.DEBUG)
@@ -18,5 +19,6 @@ def setup_logging():
         logger.addHandler(handler)
 
     return logger
+
 
 logger = setup_logging()

@@ -5,18 +5,20 @@ from app.core.config import settings
 from app.core.logging import logger
 import traceback
 
-engine = create_engine(settings.DATABASE_URL , pool_size=10, max_overflow=20, pool_pre_ping=True)
+engine = create_engine(settings.DATABASE_URL, pool_size=10, max_overflow=20, pool_pre_ping=True)
 
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind = engine)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
+
 
 def get_database():
     db = SessionLocal()
     try:
         yield db
-    finally: 
+    finally:
         db.close()
+
 
 try:
     with engine.connect() as connection:

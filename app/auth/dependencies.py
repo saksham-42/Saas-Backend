@@ -11,10 +11,12 @@ from app.core.config import settings
 
 oauth_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
-def get_user(token : str = Depends(oauth_scheme), db: Session = Depends(get_database)):
+
+def get_user(token: str = Depends(oauth_scheme), db: Session = Depends(get_database)):
+    "Decode JWT token and return the current authenticated user. Raises 401 on invalid or expired token."
     credentials_exception = HTTPException(status_code=401, detail="Could not validate the credentials")
     try:
-        payload = jwt.decode(token,settings.SECRET_KEY,algorithms=[settings.ALGORITHM])
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
         email: str = payload.get("sub")
         if email is None:
             raise credentials_exception
@@ -22,19 +24,25 @@ def get_user(token : str = Depends(oauth_scheme), db: Session = Depends(get_data
         if "expired" in str(e):
             raise HTTPException(status_code=401, detail="Token has been expired")
         raise credentials_exception
-    
-    curr_user = get_user_by_email(db,email)
+
+    curr_user = get_user_by_email(db, email)
     if curr_user is None:
         raise credentials_exception
     return curr_user
 
-def require_admin(current_user: User=Depends(get_user)):
+
+def require_admin(current_user: User = Depends(get_user)):
+    "Dependency that enforces the current user has global admin role. Raises 403 otherwise."
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Admins Only")
     return current_user
 
-def get_org_member(org_id: int, curr_user: User=Depends(get_user), db: Session=Depends(get_database)):
-    member = db.query(OrganizationMember).filter(OrganizationMember.org_id==org_id, OrganizationMember.user_id==curr_user.id).first()
+
+def get_org_member(org_id: int, curr_user: User = Depends(get_user), db: Session = Depends(get_database)):
+    "Dependency that verifies the current user is a member of the given org. Raises 403 otherwise."
+    member = db.query(OrganizationMember).filter(
+        OrganizationMember.org_id == org_id,
+        OrganizationMember.user_id == curr_user.id).first()
     if not member:
         raise HTTPException(status_code=403, detail="Not a member of this organization")
     return member

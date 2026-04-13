@@ -2,6 +2,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime
 from app.core.db import Base
 
+
 class RefreshToken(Base):
     __tablename__ = "refresh_tokens"
 
