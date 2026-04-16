@@ -6,9 +6,31 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.middleware import RequestLoggingMiddleware
 from app.core.logging import logger
 from app.core.db import engine
+from sqlalchemy import text
+from contextlib import asynccontextmanager
 import traceback
 
-app = FastAPI()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    try:
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+        logger.info("Database connected successfully")
+    except Exception as e:
+        logger.error(f"Database connection failed: {e}")
+        logger.error(f"Full traceback:\n{traceback.format_exc()}")
+        raise
+
+    
+    yield
+
+    # Shutdown
+    engine.dispose()
+    logger.info("Database connections closed. Shutdown complete.")
+
+
+app = FastAPI(lifespan=lifespan)
 app.add_middleware(RequestLoggingMiddleware)
 
 app.add_middleware(
@@ -22,16 +44,6 @@ app.include_router(users.router)
 app.include_router(auth.router)
 app.include_router(organizations.router)
 app.include_router(tasks.router)
-
-@app.on_event("startup")
-def app_on_startup():
-    try:
-        with engine.connect() as connection:
-            logger.info("Database connected successfully")
-    except Exception as e:
-        logger.error(f"Database connection failed: {e}")
-        logger.error(f"Full traceback:\n{traceback.format_exc()}")
-        raise
 
 
 @app.exception_handler(404)
@@ -51,4 +63,10 @@ def root():
 
 @app.get("/health")
 def health():
-    return {"status": "ok"}
+    try:
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+        return {"status": "ok", "database": "connected"}
+    except Exception as e:
+        logger.error(f"Health check failed: {e}")
+        return JSONResponse(status_code=503, content={"status": "degraded", "database": "unreachable"})
