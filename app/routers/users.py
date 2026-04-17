@@ -1,6 +1,6 @@
 from fastapi import Depends, APIRouter
 from sqlalchemy.orm import Session
-from app.schemas.user import User_response, User_create, Update_user
+from app.schemas.user import User_response, Update_user
 from app.schemas.task import Task_response
 from app.core.db import get_database
 from app.auth.dependencies import get_user, require_admin
@@ -11,11 +11,6 @@ router = APIRouter(
     prefix="/users",
     tags=["users"]
 )
-
-
-@router.post("/", response_model=User_response)
-def add_user(user: User_create, db: Session = Depends(get_database)):
-    return user_service.add_user(user, db)
 
 
 @router.get("/me", response_model=User_response)

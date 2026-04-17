@@ -1,16 +1,8 @@
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
-from app.schemas.user import User_create, Update_user
+from app.schemas.user import Update_user
 import app.crud.users as crud
 from app.models.task import Task
-
-
-def add_user(user: User_create, db: Session):
-    "Register a new user. Raises 400 if email is already taken."
-    existing = crud.get_user_by_email(db, user.email)
-    if existing:
-        raise HTTPException(status_code=400, detail="Email already registered")
-    return crud.create_user(db, user)
 
 
 def get_my_tasks(skip: int, limit: int, db: Session, curr_user):

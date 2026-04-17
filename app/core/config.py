@@ -1,4 +1,5 @@
 from pydantic_settings import BaseSettings
+from pydantic import ConfigDict
 from typing import Optional
 
 
@@ -9,8 +10,6 @@ class Settings(BaseSettings):
     ALGORITHM: str
     EXPIRE_MINUTES: int
 
-    class Config:
-        env_file = ".env"
+    model_config = ConfigDict(extra="ignore")
 
-
-settings = Settings()
+settings = Settings()   
