@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.middleware import RequestLoggingMiddleware
 from app.core.logging import logger
 from app.core.db import engine
+from app.core.cache import get_redis
 from sqlalchemy import text
 from contextlib import asynccontextmanager
 import traceback
@@ -26,6 +27,7 @@ async def lifespan(app: FastAPI):
     yield
 
     # Shutdown
+    get_redis().close()
     engine.dispose()
     logger.info("Database connections closed. Shutdown complete.")
 

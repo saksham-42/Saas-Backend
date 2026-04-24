@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     SECRET_KEY: str
     ALGORITHM: str
     EXPIRE_MINUTES: int
+    REDIS_URL : str = "redis://localhost:6379"
 
     model_config = ConfigDict(extra="ignore")
 

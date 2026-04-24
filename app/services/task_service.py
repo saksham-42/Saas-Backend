@@ -1,11 +1,16 @@
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from app.models.task import Task
-from app.schemas.task import Task_create, TaskAssign, TaskStatus, TaskUpdate
+from app.schemas.task import Task_create, TaskAssign, TaskStatus, TaskUpdate, Task_response
 from app.models.organization_member import OrganizationMember
+from app.core.cache import cache_delete_pattern, cache_get, cache_set
 from datetime import datetime, timezone
 from typing import Optional
 
+TASKS_CACHE = 60
+
+def _tasks_cache_key(org_id: int, skip: int, limit: int) -> str:
+    return f"tasks:org:{org_id}:skip:{skip}:limit:{limit}"
 
 def create_tasks(org_id: int, task: Task_create, db: Session):
     "Create a new task in an organization. Raises 400 if the assignee is not an org member."
@@ -19,15 +24,22 @@ def create_tasks(org_id: int, task: Task_create, db: Session):
     db.add(new_task)
     db.commit()
     db.refresh(new_task)
+    cache_delete_pattern(f"tasks:org:{org_id}:*") 
     return new_task
 
 
 def get_tasks(db: Session, org_id: int, status: Optional[TaskStatus], skip: int, limit: int):
     "Return paginated non-deleted tasks for an org, optionally filtered by status."
-    task = db.query(Task).filter(Task.org_id == org_id, Task.is_deleted.is_(False))
+    cache_key = _tasks_cache_key(org_id, skip, limit)
+    cached = cache_get(cache_key)
+    if cached is not None:
+        return cached
+    tasks = db.query(Task).filter(Task.org_id == org_id, Task.is_deleted.is_(False))
     if status:
-        task = task.filter(Task.status == status)
-    return task.offset(skip).limit(limit).all()
+        tasks = tasks.filter(Task.status == status)
+    result = tasks.offset(skip).limit(limit).all()
+    cache_set(cache_key, [Task_response.model_validate(t).model_dump() for t in result], ttl=TASKS_CACHE)
+    return result
 
 
 def update_task(org_id: int, task_id: int, task_update: TaskUpdate, db: Session):
@@ -38,6 +50,7 @@ def update_task(org_id: int, task_id: int, task_update: TaskUpdate, db: Session)
     task.status = task_update.status
     db.commit()
     db.refresh(task)
+    cache_delete_pattern(f"tasks:org:{org_id}:*")
     return task
 
 
@@ -53,6 +66,7 @@ def assign_task(org_id: int, task_id: int, task_assign: TaskAssign, db: Session)
     task.assigned_to = task_assign.assigned_to
     db.commit()
     db.refresh(task)
+    cache_delete_pattern(f"tasks:org:{org_id}:*")
     return task
 
 
@@ -64,4 +78,5 @@ def delete_task(org_id: int, task_id: int, db: Session):
     task.is_deleted = True
     task.deleted_at = datetime.now(timezone.utc)
     db.commit()
+    cache_delete_pattern(f"tasks:org:{org_id}:*")
     return {"message": "Task deleted!"}
