@@ -1,4 +1,5 @@
 from fastapi import HTTPException
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 from app.models.task import Task
 from app.schemas.task import Task_create, TaskAssign, TaskStatus, TaskUpdate, Task_response
@@ -29,7 +30,7 @@ def create_tasks(org_id: int, task: Task_create, db: Session):
     return new_task
 
 
-def get_tasks(db: Session, org_id: int, status: Optional[TaskStatus], skip: int, limit: int):
+def get_tasks(db: Session, org_id: int, status: Optional[TaskStatus], skip: int, limit: int, search : Optional[str] = None):
     "Return paginated non-deleted tasks for an org, optionally filtered by status."
     cache_key = _tasks_cache_key(org_id, skip, limit)
     cached = cache_get(cache_key)
@@ -38,6 +39,10 @@ def get_tasks(db: Session, org_id: int, status: Optional[TaskStatus], skip: int,
     tasks = db.query(Task).filter(Task.org_id == org_id, Task.is_deleted.is_(False))
     if status:
         tasks = tasks.filter(Task.status == status)
+    if search:
+        tasks = tasks.filter(
+            text("to_tsvector('english', coalesce(tasks.title, '') || ' ' || coalesce(tasks.description, '')) @@ plainto_tsquery('english', :search)")
+        ).params(search=search)
     result = tasks.offset(skip).limit(limit).all()
     cache_set(cache_key, [Task_response.model_validate(t).model_dump() for t in result], ttl=TASKS_CACHE)
     return result

@@ -22,8 +22,8 @@ def create_tasks(org_id: int, task: Task_create, member: OrganizationMember = De
 
 @router.get("/{org_id}/tasks", response_model=list[Task_response])
 def get_tasks(org_id: int, status: Optional[TaskStatus] = None, skip: int = 0, limit: int = 10,
-              curr_user: User = Depends(get_org_member), db: Session = Depends(get_database)):
-    return task_service.get_tasks(db, org_id, status, skip, limit)
+              curr_user: User = Depends(get_org_member), db: Session = Depends(get_database), search: Optional[str] = None):
+    return task_service.get_tasks(db, org_id, status, skip, limit, search)
 
 
 @router.put("/{org_id}/tasks/{task_id}", response_model=Task_response)
