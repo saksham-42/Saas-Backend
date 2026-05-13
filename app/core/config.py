@@ -11,6 +11,6 @@ class Settings(BaseSettings):
     EXPIRE_MINUTES: int
     REDIS_URL : str = "redis://localhost:6379"
 
-    model_config = ConfigDict(extra="ignore")
+    model_config = ConfigDict(env_file=".env", extra="ignore")
 
 settings = Settings()   

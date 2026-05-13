@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from app.models.task import Task
 from app.schemas.task import Task_create, TaskAssign, TaskStatus, TaskUpdate, Task_response
 from app.models.organization_member import OrganizationMember
+from app.core.websocket_manager import manager
 from app.core.cache import cache_delete_pattern, cache_get, cache_set
 from datetime import datetime, timezone
 from typing import Optional
@@ -51,6 +52,11 @@ def update_task(org_id: int, task_id: int, task_update: TaskUpdate, db: Session)
     db.commit()
     db.refresh(task)
     cache_delete_pattern(f"tasks:org:{org_id}:*")
+    manager.broadcast_sync(org_id, {
+        "event": "task_updated",
+        "task_id": task.id,
+        "status": task.status,
+    })
     return task
 
 

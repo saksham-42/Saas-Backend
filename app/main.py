@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Request
-from app.routers import users, auth, organizations, tasks
+from app.routers import users, auth, organizations, tasks, websockets
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -46,6 +46,7 @@ app.include_router(users.router)
 app.include_router(auth.router)
 app.include_router(organizations.router)
 app.include_router(tasks.router)
+app.include_router(websockets.router)
 
 
 @app.exception_handler(404)
