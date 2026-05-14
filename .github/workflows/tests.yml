@@ -33,6 +33,7 @@ jobs:
       SECRET_KEY: testsecretkey123
       ALGORITHM: HS256
       EXPIRE_MINUTES: 180
+      TESTING: "true"
 
     steps:
       - name: Checkout code
