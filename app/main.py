@@ -8,6 +8,7 @@ from app.core.logging import logger
 from app.core.db import engine
 from app.core.cache import get_redis
 from app.core.limiter import limiter
+from app.core.audit_middleware import AuditLogMiddleware
 from sqlalchemy import text
 from contextlib import asynccontextmanager
 from slowapi import _rate_limit_exceeded_handler
@@ -38,6 +39,7 @@ app = FastAPI(lifespan=lifespan)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(RequestLoggingMiddleware)
+app.add_middleware(AuditLogMiddleware)
 
 app.add_middleware(
     CORSMiddleware,
