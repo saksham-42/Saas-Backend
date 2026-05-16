@@ -3,7 +3,7 @@ from app.routers import users, auth, organizations, tasks, websockets, audit_log
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-from app.core.middleware import RequestLoggingMiddleware
+from app.core.middleware import RequestLoggingMiddleware, SecurityHeadersMiddleware, RequestSizeLimitMiddleware
 from app.core.logging import logger
 from app.core.db import engine
 from app.core.cache import get_redis
@@ -38,8 +38,9 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
-app.add_middleware(RequestLoggingMiddleware)
+app.add_middleware(RequestSizeLimitMiddleware)
 app.add_middleware(AuditLogMiddleware)
+app.add_middleware(RequestLoggingMiddleware)
 
 app.add_middleware(
     CORSMiddleware,
@@ -48,12 +49,14 @@ app.add_middleware(
     allow_methods=["*"]
 )
 
-app.include_router(users.router)
-app.include_router(auth.router)
-app.include_router(organizations.router)
-app.include_router(tasks.router)
-app.include_router(websockets.router)
-app.include_router(audit_logs.router)
+app.add_middleware(SecurityHeadersMiddleware)
+
+app.include_router(users.router, prefix="/api/v1")
+app.include_router(auth.router, prefix="/api/v1")
+app.include_router(organizations.router, prefix="/api/v1")
+app.include_router(tasks.router, prefix="/api/v1")
+app.include_router(websockets.router, prefix="/api/v1")
+app.include_router(audit_logs.router, prefix="/api/v1")
 
 
 @app.exception_handler(404)
@@ -68,7 +71,8 @@ def validation_error_handler(request: Request, exc: RequestValidationError):
 
 @app.get("/")
 def root():
-    return {"message": "SaaS Backend is live!"}
+    return {"message": "SaaS Backend is live!",
+            "version": "v1"}
 
 
 @app.get("/health")
