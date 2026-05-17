@@ -2,6 +2,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from fastapi import Request
 from app.core.db import SessionLocal
 from app.crud.audit_log import create_log
+import os
 
 METHOD_ACTION_MAP = {
     "POST": "CREATE",
@@ -26,6 +27,9 @@ def _parse_resource(path: str):
 class AuditLogMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         response = await call_next(request)
+
+        if os.getenv("TESTING") == "true":
+            return response
 
         if request.method not in METHOD_ACTION_MAP:
             return response

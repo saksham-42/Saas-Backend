@@ -4,7 +4,7 @@ from app.core.config import settings
 
 
 def test_tampered_token(client):
-    response = client.get("/users/me", headers={
+    response = client.get("/api/v1/users/me", headers={
         "Authorization": "Bearer faketoken.tampered.signature"
     })
     assert response.status_code == 401
@@ -16,13 +16,13 @@ def test_expired_token(client):
         settings.SECRET_KEY,
         algorithm=settings.ALGORITHM
     )
-    response = client.get("/users/me", headers={
+    response = client.get("/api/v1/users/me", headers={
         "Authorization": f"Bearer {expired_token}"
     })
     assert response.status_code == 401
 
 def test_register(client):
-    response = client.post("/auth/register", json={
+    response = client.post("/api/v1/auth/register", json={
         "name": "Test User",
         "age": 25,
         "email": "test@example.com",
@@ -41,19 +41,19 @@ def test_register_duplicate_email(client):
         "email": "duplicate@example.com",
         "password": "secret123"
     }
-    client.post("/auth/register", json=payload)
-    response = client.post("/auth/register", json=payload)
+    client.post("/api/v1/auth/register", json=payload)
+    response = client.post("/api/v1/auth/register", json=payload)
     assert response.status_code == 400
 
 
 def test_login_success(client):
-    client.post("/auth/register", json={
+    client.post("/api/v1/auth/register", json={
         "name": "Test User",
         "age": 25,
         "email": "login@example.com",
         "password": "secret123"
     })
-    response = client.post("/auth/login", json={
+    response = client.post("/api/v1/auth/login", json={
         "email": "login@example.com",
         "password": "secret123"
     })
@@ -65,13 +65,13 @@ def test_login_success(client):
 
 
 def test_login_wrong_password(client):
-    client.post("/auth/register", json={
+    client.post("/api/v1/auth/register", json={
         "name": "Test User",
         "age": 25,
         "email": "wrongpass@example.com",
         "password": "secret123"
     })
-    response = client.post("/auth/login", json={
+    response = client.post("/api/v1/auth/login", json={
         "email": "wrongpass@example.com",
         "password": "wrongpassword"
     })
@@ -79,7 +79,7 @@ def test_login_wrong_password(client):
 
 
 def test_login_nonexistent_user(client):
-    response = client.post("/auth/login", json={
+    response = client.post("/api/v1/auth/login", json={
         "email": "nobody@example.com",
         "password": "secret123"
     })
@@ -87,55 +87,55 @@ def test_login_nonexistent_user(client):
 
 
 def test_protected_route_without_token(client):
-    response = client.get("/users/me")
+    response = client.get("/api/v1/users/me")
     assert response.status_code == 401
 
 
 def test_protected_route_with_token(client):
-    client.post("/auth/register", json={
+    client.post("/api/v1/auth/register", json={
         "name": "Test User",
         "age": 25,
         "email": "protected@example.com",
         "password": "secret123"
     })
-    login = client.post("/auth/login", json={
+    login = client.post("/api/v1/auth/login", json={
         "email": "protected@example.com",
         "password": "secret123"
     })
     token = login.json()["access_token"]
-    response = client.get("/users/me", headers={
+    response = client.get("/api/v1/users/me", headers={
         "Authorization": f"Bearer {token}"
     })
     assert response.status_code == 200
 
 
 def test_logout(client):
-    client.post("/auth/register", json={
+    client.post("/api/v1/auth/register", json={
         "name": "Logout User", "age": 25,
         "email": "logout@example.com", "password": "secret123"
     })
-    login = client.post("/auth/login", json={
+    login = client.post("/api/v1/auth/login", json={
         "email": "logout@example.com", "password": "secret123"
     })
     refresh_token = login.json()["refresh_token"]
-    response = client.post(f"/auth/logout?refresh_token={refresh_token}")
+    response = client.post(f"/api/v1/auth/logout?refresh_token={refresh_token}")
     assert response.status_code == 200
 
 
 def test_refresh_token(client):
-    client.post("/auth/register", json={
+    client.post("/api/v1/auth/register", json={
         "name": "Refresh User", "age": 25,
         "email": "refresh@example.com", "password": "secret123"
     })
-    login = client.post("/auth/login", json={
+    login = client.post("/api/v1/auth/login", json={
         "email": "refresh@example.com", "password": "secret123"
     })
     refresh_token = login.json()["refresh_token"]
-    response = client.post(f"/auth/refresh?refresh_token={refresh_token}")
+    response = client.post(f"/api/v1/auth/refresh?refresh_token={refresh_token}")
     assert response.status_code == 200
     assert "access_token" in response.json()
 
 
 def test_refresh_invalid_token(client):
-    response = client.post("/auth/refresh?refresh_token=invalidtoken123")
+    response = client.post("/api/v1/auth/refresh?refresh_token=invalidtoken123")
     assert response.status_code == 401

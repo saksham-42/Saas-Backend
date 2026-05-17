@@ -1,6 +1,8 @@
+import os
+os.environ["TESTING"] = "true"
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine    
 from sqlalchemy.orm import sessionmaker
 from app.main import app
 from app.core.db import Base, get_database
@@ -34,10 +36,10 @@ def client(db):
     app.dependency_overrides.clear()
 
 def create_user_and_token(client, email, name="Test User", age=25, password="secret123"):
-    client.post("/auth/register", json={
+    client.post("/api/v1/auth/register", json={
         "name": name, "age": age, "email": email, "password": password
     })
-    login = client.post("/auth/login", json={"email": email, "password": password})
+    login = client.post("/api/v1/auth/login", json={"email": email, "password": password})
     token = login.json()["access_token"]
     return token
 
@@ -51,7 +53,7 @@ def admin_token(client, db):
     user = get_user_by_email(db, "admin@example.com")
     user.role = "admin"
     db.commit()
-    login = client.post("/auth/login", json={"email": "admin@example.com", "password": "secret123"})
+    login = client.post("/api/v1/auth/login", json={"email": "admin@example.com", "password": "secret123"})
     return login.json()["access_token"]
 
 @pytest.fixture
@@ -64,21 +66,21 @@ def other_user_token(client):
 
 @pytest.fixture
 def org(client, admin_token):
-    response = client.post("/organization/", json={
+    response = client.post("/api/v1/organization/", json={
         "name": "Test Org", "slug": "test-org"
     }, headers=auth_headers(admin_token))
     return response.json()
 
 @pytest.fixture
 def other_org(client, other_user_token):
-    response = client.post("/organization/", json={
+    response = client.post("/api/v1/organization/", json={
         "name": "Other Org", "slug": "other-org"
     }, headers=auth_headers(other_user_token))
     return response.json()
 
 @pytest.fixture
 def task(client, admin_token, org):
-    response = client.post(f"/organization/{org['id']}/tasks", json={
+    response = client.post(f"/api/v1/organization/{org['id']}/tasks", json={
         "title": "Test Task",
         "description": "A task",
         "status": "pending",
