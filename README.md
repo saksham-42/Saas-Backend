@@ -31,6 +31,15 @@ A production-grade multi-tenant SaaS Backend built with FastAPI, PostgreSQL, SQL
 - Dockerized with docker-compose for local development
 - Graceful shutdown with lifespan events
 - Health check endpoint with real DB connection test
+- Redis caching with 60s TTL — cache invalidated on writes
+- WebSocket real-time task updates
+- PostgreSQL full-text search using tsvector + tsquery + GIN index
+- Query optimization — indexes on org_id, assigned_to; 475ms → 0.075ms with EXPLAIN ANALYZE
+- Load tested with Locust — 100 concurrent users, 48.9 RPS, 0 failures
+- Audit logging — every POST/PUT/DELETE auto-logged with user, resource, IP, timestamp
+- API versioning under /api/v1
+- Security headers and request size limiting
+- CI/CD with GitHub Actions
 
 ---
 
@@ -48,6 +57,12 @@ A production-grade multi-tenant SaaS Backend built with FastAPI, PostgreSQL, SQL
 | Containerization | Docker + Docker Compose |
 | Deployment | Render |
 | Config | pydantic-settings |
+| Caching | Redis |
+| WebSockets | FastAPI WebSockets + websockets |
+| Rate Limiting | slowapi |
+| Search | PostgreSQL tsvector + GIN index |
+| Load Testing | Locust |
+| CI/CD | GitHub Actions |
 
 ---
 
@@ -59,13 +74,15 @@ Client
   ▼
 FastAPI (Uvicorn)
   │
-  ├── Middleware (RequestLoggingMiddleware)
+  ├── Middleware (RequestLoggingMiddleware, AuditLogMiddleware, SecurityHeadersMiddleware)
   │
   ├── Routers (HTTP layer only)
   │     ├── auth.py
   │     ├── users.py
   │     ├── organizations.py
-  │     └── tasks.py
+  │     ├── tasks.py
+  │     ├── websockets.py
+  │     └── admin.py
   │
   ├── Services (Business logic)
   │     ├── auth_service.py
@@ -78,6 +95,11 @@ FastAPI (Uvicorn)
   │     ├── organizations.py
   │     └── tasks.py
   │
+  ├── Core
+  │     ├── cache.py            (Redis)
+  │     ├── websocket_manager.py
+  │     └── limiter.py
+  | 
   └── PostgreSQL (via SQLAlchemy)
 ```
 
@@ -97,22 +119,28 @@ SaaS-Backend/
 │   │   ├── config.py           # pydantic-settings
 │   │   ├── db.py               # engine, session, Base
 │   │   ├── logging.py          # centralized logger
-│   │   └── middleware.py       # request logging middleware
+│   │   ├── middleware.py       # request logging middleware
+│   │   ├── cache.py            # Redis cache helpers
+│   │   ├── websocket_manager.py # WebSocket connection manager
+│   │   └── limiter.py          # rate limiter instance
 │   ├── crud/
 │   │   ├── organizations.py
 │   │   ├── tasks.py
 │   │   └── users.py
 │   ├── models/
+│   │   ├── audit_log.py
 │   │   ├── organization.py
 │   │   ├── organization_member.py
 │   │   ├── refresh_token.py
 │   │   ├── task.py
 │   │   └── user.py
 │   ├── routers/
+│   │   ├── admin.py
 │   │   ├── auth.py
 │   │   ├── organizations.py
 │   │   ├── tasks.py
-│   │   └── users.py
+│   │   ├── users.py
+│   │   └── websockets.py
 │   ├── schemas/
 │   └── services/
 │       ├── auth_service.py
@@ -151,6 +179,10 @@ TEST_DATABASE_URL=postgresql://postgres:yourpassword@localhost:5432/saas_test
 SECRET_KEY=your_secret_key
 ALGORITHM=HS256
 EXPIRE_MINUTES=180
+DB_USER=your_user
+DB_PASSWORD=your_password
+DB_NAME=your_database_name
+REDIS_URL=redis://localhost:6379
 ```
 
 Run migrations:
@@ -184,6 +216,7 @@ This spins up the FastAPI app and PostgreSQL together. App available at `http://
 | `SECRET_KEY` | ✅ | JWT signing key |
 | `ALGORITHM` | ✅ | JWT algorithm (HS256) |
 | `EXPIRE_MINUTES` | ✅ | Access token expiry in minutes |
+| `REDIS_URL` | ✅ | Redis connection string |
 
 ---
 
@@ -230,6 +263,11 @@ This spins up the FastAPI app and PostgreSQL together. App available at `http://
 |---|---|---|
 | GET | / | Root — service status |
 | GET | /health | Health check with DB ping |
+
+### Admin
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | /admin/audit-logs | List audit logs (admin only) |
 
 ---
 
@@ -299,6 +337,8 @@ pytest tests/ -v
 
 ## Progress
 
+> ✅ Project complete — 7 weeks.
+
 | Week | Focus | Status |
 |---|---|---|
 | Week 1 | FastAPI Core — CRUD, routers, schemas | ✅ |
@@ -307,3 +347,4 @@ pytest tests/ -v
 | Week 4 | Multi-tenancy — orgs, members, tasks, isolation | ✅ |
 | Week 5 | Code quality — services layer, logging, 45 tests | ✅ |
 | Week 6 | Docker, deployment, health check, graceful shutdown | ✅ |
+| Week 7 | Redis, WebSockets, full-text search, audit logging, security, and load testing | ✅ |
